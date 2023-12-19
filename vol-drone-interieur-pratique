@@ -1,0 +1,138 @@
+*Note : Lors de la partie pratique vous n'aurez pas ce paramètre. En effet, il faudrat activer l'ekf2 et lui dire d'utiliser les données de positions d'Optitrack.*
+
+## A. Pratique
+
+**Attention : Il est strictement INTERDIT de mettre les hélices sur le drone tant que vous êtes hors de la cage spécialement prévue pour faire voler les drones. Votre encadrant seul vous donnera les hélices au moment ou vous en aurez besoin.**
+
+### 1. Le materiel & assemblage
+Afin de pouvoir faire voler un drone, il nous faut un drone ... Pour ce faire, des drones pré-assemblés sont mis à votre disposition **sans hélices** (il faudrat venir les demander à votre encadrant de TP lors des tests en cage). Il suffit de flasher la carte SD du companion computer et de l'insérer dans ce dernier. 
+
+Pour ce faire il vous est demandé de télécharger l'image du companion computer disponible [ici](https://cdn.aircslab.fr/noetic_2023.zip). Une fois le téléchargement terminé, utilisez [Balena Etcher](https://www.balena.io/etcher/) pour écrire l'image sur la carte SD.
+
+L'image ci-dessous montre comment le companion computer est assemblé sur le drone :
+![odroid on drone](../images/odroid_on_drone.jpg)
+
+La carte SD doit être insérée entre le connecteur d'alimentation et le potr HDMI (à droite sur la photo ci-dessus). Une fois la carte insérée, il est nécessaire de vérifier que l'intérupteur (en haut à droite sur la photo) est bien positionné sur **µSD**. Si ce n'est pas le cas le **companion computer ne démarrera pas. Vérifiez la présence d'une clef WiFi sinon vous ne pourrez pas vous y connecter en SSH**.
+
+> Si vous ne trouvrez pas l'adresse IP de votre Companion Computer ne pas hésiter à venir me demander.
+
+Enfin, il faut vérifier que le PixHawk est bien relié depuis le port TELEM 2 au port USB du companion computer. Ce cable est en réalité un convertisseur UART vers USB. Il permet la communication entre le firmware du controleur de vol (Pixhawk) et ROS (companion computer). On peut en voir le connecteur USB sur la photo ci-dessus, et on peut voir le connecteur coté pixhawk sur la photo ci-dessous.
+![connexion telem 2 pixhawk](../images/pixhawk.jpg)
+
+### 2. Installation de ROS sur le companion computer embarqué
+Une fois le drone mis sous tension, le companion computer devrait démarrer après quelques minutes. Le companion computer permet de faire tourner ROS sur le drone directement. C'est ce dernier qui va permettre de communiquer avec le serveur MOCAP et, pour ceux qui vont plus loin, de gérer les caméras et autres capteurs qui permettent de faire de l'avoidance. Enfin, il permet aussi de calculer les trajectoires en fonction des différents obstacles détectés par le drone.
+
+> On utilise un companion computer car les taches de calculs de trajectoire, de détection des obstacles, ou encore simplement d'une liaison WiFi ne sont pas supportées nativement par le controleur de vol. De plus, le fait de séparer les différents organes de pilotage permet de garder une certaine tolérance à la faute. Par exemple, dans notre exemple, si le drone perd son companion computer, le FCU est capable de prendre le relais le temps de faire attérir le drone en sécurité.
+
+Vous pouvez vous y connecter directement via SSH :
+
+```bash
+ssh dev@odroid.local # ou l'adresse IP que vous avez récupérée
+# password : dev_ros
+```
+
+Maintenant que nous sommes connectés au drone, nous pouvons installer les packages nécessaires pour faire fonctionner correctement le drone.
+
+La suite de cette section contient les étapes nécessaires pour la création d'un environnement d'exécution de ROS coté robot. Cet environnement est mis en place sur un Odroid XU4 équipé d'un Ubuntu 20.04 LTS. Dans un premier temps, nous allons installer ROS sur le SBC avant de voir comment créer notre première workspace qui permettra à terme de piloter le drone.
+
+#### Configure swap
+Nous devons dans un premier temps augmenter la taille du fichier de SWAP. Ceci permet d'éviter qu'Ubuntu essaye d'arreter le compilateur CPP par manque de ressources. L'augmentation de la taille du fichier SWAP se fait à l'aide des commandes suivantes :
+
+```bash
+sudo fallocate -l 4G /swapfile
+sudo chmod 600 /swapfile
+sudo mkswap /swapfile
+sudo swapon /swapfile
+sudo swapon --show
+echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab # Adding swap at boot
+```
+
+Une fois le fichier SWAP suffisament grand pour compiler ROS, nous pouvons ajouter les sources qui nous permettent d'installer ROS. Il vous faudra exectuer la commande suivante :
+
+```bash
+sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list'
+```    
+
+Une fois les sources ajoutées, il vous faut récupérer les clefs qui permettent d'utiliser ces sources. Cette opération se fait avec la commande suivante.
+
+``` bash
+sudo apt install curl # if you haven't already installed curl
+curl -s https://raw.githubusercontent.com/ros/rosdistro/master/ros.asc | sudo apt-key add -
+```     
+
+Une fois cette étape terminée, nous pouvons rafraichir les sources disponibles et enfin installer ROS sur notre drone.
+
+``` bash
+sudo apt update
+```  
+
+> Sur le drone,  nous allons uniquement installer ROS-Core. En effet, nous n'avons plus besoin de  l'environnement de simulation.
+
+```bash
+sudo apt install ros-noetic-ros-base
+```
+
+Une fois que ROS est installé, nous pouvons charger sa configuration.
+
+```bash
+source /opt/ros/noetic/setup.bash
+```
+
+Pour plus de facilité, vous pouvez ajouter la commande précédante au fichier `~/.bashrc` et aussi créer un alias.
+
+```bash
+echo "source /opt/ros/noetic/setup.bash" >> ~/.bashrc
+source ~/.bashrc
+```
+
+Comme nous l'avons fait à l'étape précédente, nous allons installer toutes les dépendances qui permettent de compiler et executer les paquets que nous allons créer / utiliser.
+
+```bash
+sudo apt install python3-rosdep python3-rosinstall python3-rosinstall-generator python3-wstool build-essential
+sudo apt install python3-rosdep
+sudo rosdep init
+rosdep update
+sudo apt install ros-noetic-catkin python3-catkin-tools -y
+sudo ln -s /usr/bin/python3 /usr/bin/python
+wget https://raw.githubusercontent.com/mavlink/mavros/master/mavros/scripts/install_geographiclib_datasets.sh 
+sudo bash ./install_geographiclib_datasets.sh
+```
+
+Maintenant que  ROS est correctement installer sur notre drone, vous devez recréer la workspace à l'aide des commandes que nous avons vues précedemment. Nous allons réutiliser le paquet `offboard_py` et modifier son launch file afin de pouvoir lancer ROS avec le FCU et non en simulation. Vous pouvez utiliser la commande `scp` pour transférer des dossiers et fichiers d'un PC à un autre.
+
+> Il est important de remarquer que le paquet `mocap_simulator` doit être remplacer par le paquet qui permet de se connecter au serveur MOCAP.
+
+Le paquet qui permet de se connecter au serveur MOCAP est le [suivant](http://wiki.ros.org/vrpn_client_ros) :
+
+```bash
+sudo apt-get install ros-noetic-vrpn-client-ros -y
+```
+
+Une fois le paquet installé, nous pouvons ouvrir un nouveau terminal et lancer la commande suivante qui va permttre de connecter ROS au serveur MOCAP et ainsi de pouvoir relayer les données de ce dernier sur les topics MAVROS. Ainsi, notre drone pourra utiliser les données de position Optitracks pour voler.
+
+```bash
+roslaunch vrpn_client_ros sample.launch server:=<mocap machine ip>
+```
+
+Nous pouvons maintenant rediriger le topics `vrpn` sur le topic `mavros` qui est utilisé par le drone :
+
+```bash
+rosrun topic_tools relay /vrpn_client_node/<rigid_body_name>/pose /mavros/vision_pose/pose
+```
+
+Une fois ceci réalisé, nous pouvons configurer le FCU pour qu'il prenne en compte les données de vision envoyées par le système de MOCAP. Nous devons alors utilisé QGroundControl (installé sur votre machine) pour se connecter au FCU et modifier les paramètres qui suivent :
+
+Pour plus dinformations sur le fonctionnement de l'algorithme : [EKF2 tuning guide](https://docs.px4.io/master/en/advanced_config/tuning_the_ecl_ekf.html)
+
+Les paramètres suivants doivent être appliqués pour que les informations de position externes soient utilisées avec EKF2 (*QGroundControl* > **Vehicle Setup > Parameters > EKF2**)
+
+Parameter | Setting for External Position Estimation
+--- | ---
+[EKF2_AID_MASK](../advanced/parameter_reference.md#EKF2_AID_MASK) | Set *vision position fusion*, *vision velocity fusion*, *vision yaw fusion* and *external vision rotation* accoring to your desired fusion model.
+[EKF2_HGT_MODE](../advanced/parameter_reference.md#EKF2_HGT_MODE) | Set to *Vision* to use the vision a primary source for altitude estimation.
+[EKF2_EV_DELAY](../advanced/parameter_reference.md#EKF2_EV_DELAY) | Set to the difference between the timestamp of the measurement and the "actual" capture time. For more information see [below](#tuning-EKF2_EV_DELAY).
+[EKF2_EV_POS_X](../advanced/parameter_reference.md#EKF2_EV_POS_X), [EKF2_EV_POS_Y](../advanced/parameter_reference.md#EKF2_EV_POS_Y), [EKF2_EV_POS_Z](../advanced/parameter_reference.md#EKF2_EV_POS_Z) | Set the position of the vision sensor (or MoCap markers) with respect to the robot's body frame.
+
+> **Tip** Reboot the flight controller in order for parameter changes to take effect.
+
+Vous pouvez ensuite venir essayer votre drone dans la cage pour vérifier que ce dernier vol correctement avec le système de positionnement type MOCAP.
