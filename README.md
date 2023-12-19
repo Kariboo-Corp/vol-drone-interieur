@@ -1,11 +1,3 @@
----
-title: "Vol en intérieur avec ROS"
-menu:
-  main:
-    name: "F450"
-    weight: 1
-    parent: "f450"
----
 # Vol en intérieur avec ROS
 
 ## Prérequis
@@ -16,18 +8,16 @@ menu:
 
 ## Diapositives
 
-{{<pdf src="https://cdn.aircslab.fr/cours_ros4pro.pdf" >}}
+[../vol_drone_interieur_ros.pdf]()
 
 ## Quelques alias
-Les alias sont des racourcis qui nous permettent d'éxectuer des commandes recurentes plus rapidement. 
+Les alias sont des racourcis qui nous permettent d'éxectuer des commandes recurentes plus rapidement. Exemple ?
 
 ```bash
 alias sb="source ~/.bashrc"
 ```
 
 ## Travaux pratiques
-
-**Vous devez utiliser la clef USB bootable fournit pour la formation.**
 
 ## A. Simulation
 Pour mieux comprendre comment fonctionne l'assemblage ROS & drone, nous allons dans un premier temps essayer de faire voler un drone dans un environnement de simulation. Cet environnement de simulation permet de tester nos package ROS sans avoir de perte ou de casse de matériel. Une fois les essais concluants en simulation vous pourrez passer sur un drone bien réel.
