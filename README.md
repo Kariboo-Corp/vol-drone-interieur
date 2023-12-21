@@ -78,15 +78,15 @@ git clone -b v1.13.2 https://github.com/PX4/PX4-Autopilot.git --recursive /home/
 <summary>Avec l'aide de la documentation, quelles sont les commandes que nous devons ensuite executer pour compiler le firmware ?</summary>
 
 ```bash
-./PX4-Autopilot/Tools/setup/ubuntu.sh
-echo 'source ~/PX4-Autopilot/Tools/setup_gazebo.bash ~/PX4-Autopilot ~/PX4-Autopilot/build/px4_sitl_default' >> /home/$USER/.bashrc
-echo 'export ROS_PACKAGE_PATH=$ROS_PACKAGE_PATH:~/PX4-Autopilot' >> /home/$USER/.bashrc
-echo 'export ROS_PACKAGE_PATH=$ROS_PACKAGE_PATH:~/PX4-Autopilot/Tools/sitl_gazebo' >> /home/$USER/.bashrc
+./PX4-Firmware/Tools/setup/ubuntu.sh
+echo 'source ~/PX4-Firmware/Tools/setup_gazebo.bash ~/PX4-Firmware ~/PX4-Firmware/build/px4_sitl_default' >> /home/$USER/.bashrc
+echo 'export ROS_PACKAGE_PATH=$ROS_PACKAGE_PATH:~/PX4-Firmware' >> /home/$USER/.bashrc
+echo 'export ROS_PACKAGE_PATH=$ROS_PACKAGE_PATH:~/PX4-Firmware/Tools/sitl_gazebo' >> /home/$USER/.bashrc
 echo 'export GAZEBO_PLUGIN_PATH=$GAZEBO_PLUGIN_PATH:/usr/lib/x86_64-linux-gnu/gazebo-9/plugins' >> /home/$USER/.bashrc
 
 source ~/.bashrc
 
-cd ~/PX4-Autopilot
+cd ~/PX4-Firmware
 make px4_sitl_default gazebo
 ```
 
@@ -326,11 +326,11 @@ Nous devons maintenant exporter quelques variables d'environnement afin de pouvo
 > Expliquez ce que permettent de faire les commandes suivantes.
 
 ```bash
-source ~/PX4-Autopilot/Tools/simulation/gazebo/setup_gazebo.bash ~/PX4-Autopilot ~/PX4-Autopilot/build/px4_sitl_default
+source ~/PX4-Firmware/Tools/simulation/gazebo/setup_gazebo.bash ~/PX4-Firmware ~/PX4-Firmware/build/px4_sitl_default
 source /opt/ros/noetic/setup.bash
 source ~/mocapfly_ws/devel/setup.bash
-export ROS_PACKAGE_PATH=$ROS_PACKAGE_PATH:~/PX4-Autopilot
-export ROS_PACKAGE_PATH=$ROS_PACKAGE_PATH:~/PX4-Autopilot/Tools/sitl_gazebo
+export ROS_PACKAGE_PATH=$ROS_PACKAGE_PATH:~/PX4-Firmware
+export ROS_PACKAGE_PATH=$ROS_PACKAGE_PATH:~/PX4-Firmware/Tools/sitl_gazebo
 export GAZEBO_PLUGIN_PATH=$GAZEBO_PLUGIN_PATH:/usr/lib/x86_64-linux-gnu/gazebo-9/plugins
 export GAZEBO_PLUGIN_PATH=$GAZEBO_PLUGIN_PATH:/usr/local/lib/gazebo
 ```
