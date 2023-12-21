@@ -119,6 +119,7 @@ Notre environnement de développement est enfin opérationel. Nous allons mainte
 Pour créer la workspace, nous devons dabord créer un dossier et ensuite dire à ROS d'initialisé la workspace :
 
 ```bash
+sudo apt install python3-rosdep python3-rosinstall python3-rosinstall-generator python3-wstool build-essential
 mkdir -p ~/mocapfly_ws/src
 cd ~/mocapfly_ws
 catkin init
