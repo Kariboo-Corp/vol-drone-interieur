@@ -384,7 +384,7 @@ Enfin, nous allons rajouter la ligne suivante :
 Installez le paquet suivant :
 
 ```bash
-sudo apt-get install ros-kinetic-vrpn-client-ros
+sudo apt-get install ros-noetic-vrpn-client-ros
 ````
 
 > Quel est la fonction de ce paquet ?
